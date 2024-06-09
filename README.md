@@ -2,46 +2,45 @@ Problem statement -
 
 Food recommendation system.
 
-eed to create a system where employees can give ratings, feedback.
-There'll be 3 roles -
+We need to create a system where employees can give ratings and feedback.
+There will be 3 roles -
 	• Chef
 	• Admin
 	• Employee or user.
-System will help the employees to give their recommendation.
-It will also help the chef to know employee's interests.
+The system will help the employees to give their recommendations.
+It will also help the chef to know the employee's interests.
 
 Features needed to be implemented -
-Features needed to be implemented -
 
-	• Authentication and Authorization.
-		○ Login feature.
-		○ Access to only those API's based on role assigned to them.
-		○ Employees can login using their employee ID and name.
-	
-	• Menu Management
-		○ Admin can add, update, and delete menu items with prices and availability.
+1. Authentication and Authorization.
+	1. Login feature.
+	2. Access to only those APIs based on the role assigned to them.
+	3. Employees can log in using their employee ID and name.
 
-	• Food recommendation
-		○ Role - Chef
-			§ Chef will roll out X items for breakfast, lunch, dinner.
-			§ One day before - (n-1)
-			§ X items will be shown to employees.
-			§ Employees will choose what they want by EOD.
-			§ Nth day cafe owner will prepare food according to the resoponse.
-			§ Each food has multiple attributes -
-				□ Consumer comments.
-				□ Consumer ratings.
-				□ Date of provided feedback.
-			§ When chef sends food items to employees it must go through with recommendation engine.
-				□ This engine will find ratings of the food and show to the user.
-				□ It will also find the comments and show to the user.
-		○ Role - Employee
-			§ Employee can give feedback on any food item from menu including breakfast, lunch and dinner.
-		○ Role - Reporting
-			§ Monthly report will be generated for food items for chef.
-		○ Notifications
-			§ Notifications are sent through socket.
-				□ For next day food recommendation.
-				□ For any new food item.
-				□ Availability status of any food item.
+2. Menu Management
+	1. Admin can add, update, and delete menu items with prices and availability.
 
+3. Food recommendation
+   
+1. Role - Chef
+	1. Chef will roll out X items for breakfast, lunch, and dinner.
+	2. He will roll the menu one day before - (n-1)
+	3. X items will be shown to employees.
+	4. Employees will choose what they want by EOD by voting.
+	5. On the nth day the cafe owner will prepare food according to the response or voting result.
+	6. Each food has multiple attributes -
+		1. Consumer comments.
+		2. Consumer ratings.
+		3. Date of provided feedback.
+	7. When a chef sends food items to employees they must go through with the recommendation engine.
+		1. This engine will find and show food ratings to the user.
+		2. It will also find and show the comments to the user.
+2. Role - Employee
+	1. An employee can give feedback on any food item from the menu including breakfast, lunch, and dinner.
+3. Role - Reporting
+	1. A monthly report will be generated for food items for the chef.
+4. Notifications
+	1. Notifications are sent through socket.
+		1. For next-day food recommendations.
+		2. For any new food item.
+		3. Availability status of any food item.
