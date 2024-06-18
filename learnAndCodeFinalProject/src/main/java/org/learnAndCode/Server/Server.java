@@ -41,8 +41,10 @@ public class Server {
                             displayAdminMenu(writer, reader);
                         } else if (roleId == 2) {
                             writer.println("Welcome Chef!");
+                            displayChefMenu(writer, reader);
                         } else if (roleId == 3) {
                             writer.println("Welcome Employee!");
+                            displayEmployeeMenu(writer, reader);
                         } else {
                             writer.println("Welcome User!");
                         }
@@ -111,6 +113,78 @@ public class Server {
                     } else {
                         writer.println("Failed to update menu item.");
                     }
+                    break;
+                default:
+                    writer.println("Invalid option. Please try again.");
+                    continue;
+            }
+            break; // Exit the loop if a valid option is chosen
+        }
+    }
+    private static void displayChefMenu(PrintWriter writer, BufferedReader reader) throws IOException {
+        while (true) {
+            writer.println("Chef Menu:");
+            writer.println("1. Get recommendation");
+            writer.println("2. Roll out menu");
+            writer.println("3. Generate report");
+            writer.println("Please select an option:");
+
+            String option = reader.readLine();
+            System.out.println("Option selected: " + option);
+
+            if (option == null) {
+                writer.println("Invalid input. Please try again.");
+                continue;
+            }
+
+            switch (option) {
+                case "1":
+                    writer.println("Getting recommendation...");
+                    // Implement the logic to get recommendation
+                    break;
+                case "2":
+                    writer.println("Rolling out menu...");
+                    // Implement the logic to roll out menu
+                    break;
+                case "3":
+                    writer.println("Generating report...");
+                    // Implement the logic to generate report
+                    break;
+                default:
+                    writer.println("Invalid option. Please try again.");
+                    continue;
+            }
+            break; // Exit the loop if a valid option is chosen
+        }
+    }
+    private static void displayEmployeeMenu(PrintWriter writer, BufferedReader reader) throws IOException {
+        while (true) {
+            writer.println("Employee Menu:");
+            writer.println("1. Check Notifications");
+            writer.println("2. Vote");
+            writer.println("3. Give feedback");
+            writer.println("Please select an option:");
+
+            String option = reader.readLine();
+            System.out.println("Option selected: " + option);
+
+            if (option == null) {
+                writer.println("Invalid input. Please try again.");
+                continue;
+            }
+
+            switch (option) {
+                case "1":
+                    writer.println("Checking Notifications...");
+                    // Implement the logic to check menu
+                    break;
+                case "2":
+                    writer.println("Voting...");
+                    // Implement the logic to vote
+                    break;
+                case "3":
+                    writer.println("Giving feedback...");
+                    // Implement the logic to give feedback
                     break;
                 default:
                     writer.println("Invalid option. Please try again.");
