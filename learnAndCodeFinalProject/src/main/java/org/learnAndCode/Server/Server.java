@@ -1,12 +1,11 @@
 package org.learnAndCode.Server;
 
-import org.learnAndCode.Database.Login;
-import org.learnAndCode.Database.MenuItemOperations;
-import org.learnAndCode.Database.User;
+import org.learnAndCode.Database.*;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.List;
 
 public class Server {
     public static void main(String[] args) {
@@ -118,7 +117,7 @@ public class Server {
                     writer.println("Invalid option. Please try again.");
                     continue;
             }
-            break; // Exit the loop if a valid option is chosen
+            break;
         }
     }
     private static void displayChefMenu(PrintWriter writer, BufferedReader reader) throws IOException {
@@ -140,23 +139,31 @@ public class Server {
             switch (option) {
                 case "1":
                     writer.println("Getting recommendation...");
-                    // Implement the logic to get recommendation
+                    getRecommendation(writer);
                     break;
                 case "2":
                     writer.println("Rolling out menu...");
-                    // Implement the logic to roll out menu
                     break;
                 case "3":
                     writer.println("Generating report...");
-                    // Implement the logic to generate report
                     break;
                 default:
                     writer.println("Invalid option. Please try again.");
                     continue;
             }
-            break; // Exit the loop if a valid option is chosen
+            break;
         }
     }
+
+    private static void getRecommendation(PrintWriter writer) {
+        List<MenuItem> recommendations = RecommendationEngine.getRecommendations();
+        writer.println("Top 5 Menu Items:");
+        for (MenuItem item : recommendations) {
+            writer.println("Name: " + item.getItemName() +
+                    ", Rating: " + item.getRating() + ", Review: " + item.getReview());
+        }
+    }
+
     private static void displayEmployeeMenu(PrintWriter writer, BufferedReader reader) throws IOException {
         while (true) {
             writer.println("Employee Menu:");
@@ -192,5 +199,6 @@ public class Server {
             }
             break; // Exit the loop if a valid option is chosen
         }
+
     }
 }
