@@ -2,12 +2,10 @@ package org.learnAndCode.Database;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class MenuItemOperations {
 
-    // Add a new menu item
     public static boolean addMenuItem(String itemName, String available, Integer price) {
         String query = "INSERT INTO MenuItems (item_name, available, price) VALUES (?, ?, ?)";
         try (Connection connection = DBConnection.getConnection();
@@ -25,7 +23,6 @@ public class MenuItemOperations {
         }
     }
 
-    // Delete a menu item by ID
     public static boolean deleteMenuItem(int itemId) {
         String query = "DELETE FROM MenuItems WHERE item_id = ?";
         try (Connection connection = DBConnection.getConnection();
