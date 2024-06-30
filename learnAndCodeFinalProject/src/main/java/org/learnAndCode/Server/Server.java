@@ -1,10 +1,16 @@
 package org.learnAndCode.Server;
 
+import org.learnAndCode.*;
 import org.learnAndCode.Database.*;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
 
 public class Server {
@@ -13,51 +19,70 @@ public class Server {
             System.out.println("Server is listening on port 9202");
 
             while (true) {
-                try (Socket socket = serverSocket.accept()) {
-                    System.out.println("New client connected");
-
-                    InputStream input = socket.getInputStream();
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-
-                    OutputStream output = socket.getOutputStream();
-                    PrintWriter writer = new PrintWriter(output, true);
-
-                    writer.println("Please enter your username:");
-                    String username = reader.readLine();
-                    System.out.println("Username entered: " + username);
-
-                    writer.println("Please enter your password:");
-                    String password = reader.readLine();
-                    System.out.println("Password entered.");
-
-                    User user = Login.validateLogin(username, password);
-
-                    if (user != null) {
-                        int roleId = user.getRoleId();
-                        System.out.println("User role ID: " + roleId);
-                        if (roleId == 1) {
-                            writer.println("Welcome Admin!");
-                            displayAdminMenu(writer, reader);
-                        } else if (roleId == 2) {
-                            writer.println("Welcome Chef!");
-                            displayChefMenu(writer, reader);
-                        } else if (roleId == 3) {
-                            writer.println("Welcome Employee!");
-                            displayEmployeeMenu(writer, reader);
-                        } else {
-                            writer.println("Welcome User!");
-                        }
-                    } else {
-                        writer.println("Invalid login. Try again.");
-                    }
-                } catch (IOException e) {
-                    System.out.println("Server exception: " + e.getMessage());
-                    e.printStackTrace();
-                }
+                Socket socket = serverSocket.accept();
+                System.out.println("New client connected");
+                new ClientHandler(socket).start();
             }
         } catch (IOException e) {
             System.out.println("Server exception: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+}
+
+class ClientHandler extends Thread {
+    private Socket socket;
+
+    public ClientHandler(Socket socket) {
+        this.socket = socket;
+    }
+
+    @Override
+    public void run() {
+        try {
+            InputStream input = socket.getInputStream();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+
+            OutputStream output = socket.getOutputStream();
+            PrintWriter writer = new PrintWriter(output, true);
+
+            writer.println("Please enter your username:");
+            String username = reader.readLine();
+            System.out.println("Username entered: " + username);
+
+            writer.println("Please enter your password:");
+            String password = reader.readLine();
+            System.out.println("Password entered.");
+
+            User user = Login.validateLogin(username, password);
+
+            if (user != null) {
+                int roleId = user.getRoleId();
+                System.out.println("User role ID: " + roleId);
+                if (roleId == 1) {
+                    writer.println("Welcome Admin!");
+                    displayAdminMenu(writer, reader);
+                } else if (roleId == 2) {
+                    writer.println("Welcome Chef!");
+                    displayChefMenu(writer, reader);
+                } else if (roleId == 3) {
+                    writer.println("Welcome Employee!");
+                    displayEmployeeMenu(writer, reader);
+                } else {
+                    writer.println("Welcome User!");
+                }
+            } else {
+                writer.println("Invalid login. Try again.");
+            }
+        } catch (IOException e) {
+            System.out.println("Server exception: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            try {
+                socket.close();
+            } catch (IOException e) {
+                System.out.println("Could not close socket: " + e.getMessage());
+            }
         }
     }
 
@@ -67,6 +92,7 @@ public class Server {
             writer.println("1. Add menu item");
             writer.println("2. Delete menu item");
             writer.println("3. Update menu item");
+            writer.println("4. Display menu items");
             writer.println("Please select an option:");
 
             String option = reader.readLine();
@@ -113,6 +139,18 @@ public class Server {
                         writer.println("Failed to update menu item.");
                     }
                     break;
+                case "4":
+                    writer.println("Displaying all menu items:");
+                    List<MenuItem> menuItems = MenuItemOperations.getAllMenuItems();
+                    if (menuItems.isEmpty()) {
+                        writer.println("No menu items found.");
+                    } else {
+                        for (MenuItem item : menuItems) {
+                            writer.println("Item ID: " + item.getItemId() + ", Name: " + item.getItemName() +
+                                    ", Rating: " + item.getRating() + ", Review: " + item.getReview());
+                        }
+                    }
+                    break;
                 default:
                     writer.println("Invalid option. Please try again.");
                     continue;
@@ -120,12 +158,14 @@ public class Server {
             break;
         }
     }
+
     private static void displayChefMenu(PrintWriter writer, BufferedReader reader) throws IOException {
         while (true) {
             writer.println("Chef Menu:");
             writer.println("1. Get recommendation");
             writer.println("2. Roll out menu");
             writer.println("3. Generate report");
+            writer.println("4. Display menu items");
             writer.println("Please select an option:");
 
             String option = reader.readLine();
@@ -143,9 +183,22 @@ public class Server {
                     break;
                 case "2":
                     writer.println("Rolling out menu...");
+                    rollOutMenu(writer,reader);
                     break;
                 case "3":
                     writer.println("Generating report...");
+                    break;
+                case "4":
+                    writer.println("Displaying all menu items:");
+                    List<MenuItem> menuItems = MenuItemOperations.getAllMenuItems();
+                    if (menuItems.isEmpty()) {
+                        writer.println("No menu items found.");
+                    } else {
+                        for (MenuItem item : menuItems) {
+                            writer.println("Item ID: " + item.getItemId() + ", Name: " + item.getItemName() +
+                                    ", Rating: " + item.getRating() + ", Review: " + item.getReview());
+                        }
+                    }
                     break;
                 default:
                     writer.println("Invalid option. Please try again.");
@@ -164,10 +217,52 @@ public class Server {
         }
     }
 
+    private static void rollOutMenu(PrintWriter writer, BufferedReader reader) throws IOException {
+        List<MenuItem> recommendations = RecommendationEngine.getRecommendations();
+        writer.println("Top 5 Menu Items:");
+        for (MenuItem item : recommendations) {
+            writer.println("Item ID: " + item.getItemId() + ", Name: " + item.getItemName() +
+                    ", Rating: " + item.getRating() + ", Review: " + item.getReview());
+        }
+        writer.println("Enter the item IDs and names of menu items you want to roll out (format: ID,Name;ID,Name;...):");
+        String input = reader.readLine();
+        List<String> entries = Arrays.asList(input.split(";"));
+
+        if (storeRolledOutItems(entries)) {
+            writer.println("Items successfully rolled out.");
+        } else {
+            writer.println("Failed to roll out items.");
+        }
+    }
+
+    private static boolean storeRolledOutItems(List<String> entries) {
+        String query = "INSERT INTO rolled_out_items (item_id, item_name) VALUES (?, ?)";
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+
+            for (String entry : entries) {
+                String[] parts = entry.split(",");
+                int itemId = Integer.parseInt(parts[0].trim());
+                String itemName = parts[1].trim();
+
+                preparedStatement.setInt(1, itemId);
+                preparedStatement.setString(2, itemName);
+                preparedStatement.addBatch();
+            }
+
+            int[] result = preparedStatement.executeBatch();
+            return Arrays.stream(result).sum() == entries.size();
+
+        } catch (SQLException | NumberFormatException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     private static void displayEmployeeMenu(PrintWriter writer, BufferedReader reader) throws IOException {
         while (true) {
             writer.println("Employee Menu:");
-            writer.println("1. Check Notifications");
+            writer.println("1. View rolled out items: ");
             writer.println("2. Vote");
             writer.println("3. Give feedback");
             writer.println("Please select an option:");
@@ -182,23 +277,81 @@ public class Server {
 
             switch (option) {
                 case "1":
-                    writer.println("Checking Notifications...");
-                    // Implement the logic to check menu
+                    writer.println("Displaying rolled out items...");
+                    displayRolledOutItems(writer);
                     break;
                 case "2":
                     writer.println("Voting...");
-                    // Implement the logic to vote
                     break;
                 case "3":
                     writer.println("Giving feedback...");
-                    // Implement the logic to give feedback
+                    giveFeedback(writer, reader);
                     break;
                 default:
                     writer.println("Invalid option. Please try again.");
                     continue;
             }
-            break; // Exit the loop if a valid option is chosen
+            break;
         }
+    }
 
+    private static void displayRolledOutItems(PrintWriter writer) {
+        String query = "SELECT item_id, item_name FROM rolled_out_items"; // Adjust this query based on your actual table and column names
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(query);
+             ResultSet resultSet = preparedStatement.executeQuery()) {
+
+            boolean itemsFound = false;
+            while (resultSet.next()) {
+                int itemId = resultSet.getInt("item_id");
+                String itemName = resultSet.getString("item_name");
+                writer.println("Item ID: " + itemId + ", Name: " + itemName);
+                itemsFound = true;
+            }
+
+            if (!itemsFound) {
+                writer.println("No items have been rolled out yet.");
+            }
+
+        } catch (SQLException e) {
+            writer.println("Error retrieving rolled out items: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private static void giveFeedback(PrintWriter writer, BufferedReader reader) throws IOException {
+        writer.println("Enter the item ID for which you want to give feedback:");
+        int itemId = Integer.parseInt(reader.readLine());
+        writer.println("Enter the item name:");
+        String itemName = reader.readLine();
+        writer.println("Enter your rating (1-5):");
+        int rating = Integer.parseInt(reader.readLine());
+        writer.println("Enter your review:");
+        String review = reader.readLine();
+
+        Feedback feedback = new Feedback(0, itemName, rating, review, itemId);  // feedbackId is auto-generated
+        if (storeFeedback(feedback)) {
+            writer.println("Feedback successfully submitted!");
+        } else {
+            writer.println("Failed to submit feedback.");
+        }
+    }
+
+    private static boolean storeFeedback(Feedback feedback) {
+        String query = "INSERT INTO feedback (item_name, rating, review, item_id) VALUES (?, ?, ?, ?)";
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+
+            preparedStatement.setString(1, feedback.getItemName());
+            preparedStatement.setInt(2, feedback.getRating());
+            preparedStatement.setString(3, feedback.getReview());
+            preparedStatement.setInt(4, feedback.getItemId());
+            int result = preparedStatement.executeUpdate();
+            return result > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 }

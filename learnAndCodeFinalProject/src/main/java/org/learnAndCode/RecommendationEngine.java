@@ -1,4 +1,6 @@
-package org.learnAndCode.Database;
+package org.learnAndCode;
+
+import org.learnAndCode.Database.DBConnection;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

@@ -1,4 +1,6 @@
-package org.learnAndCode.Database;
+package org.learnAndCode;
+
+import org.learnAndCode.Database.DBConnection;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -21,7 +23,7 @@ public class Login {
                 int roleId = resultSet.getInt("role_id");
                 return new User(username, roleId);
             } else {
-                return null; // returns null if no record is found
+                return null;
             }
 
         } catch (SQLException e) {

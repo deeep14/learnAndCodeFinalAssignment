@@ -1,4 +1,4 @@
-package org.learnAndCode.Database;
+package org.learnAndCode;
 
 public class User {
     private final String username;
