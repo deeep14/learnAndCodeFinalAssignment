@@ -3,33 +3,54 @@ package org.learnAndCode.Client;
 import java.io.*;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Arrays;
+import java.util.List;
 
 public class Client {
+    private static final String HOSTNAME = "localhost";
+    private static final int PORT = 9202;
+    private static final List<String> PROMPTS = Arrays.asList(
+            "Please enter your username:",
+            "Please enter your password:",
+            "Enter item name:",
+            "Is it available (Yes/No):",
+            "Enter item ID to delete:",
+            "Enter item ID to update:",
+            "Enter new item name:",
+            "Please select an option:",
+            "What is the price of the item?",
+            "Enter the item name:",
+            "Enter your rating (1-5):",
+            "Enter your review:",
+            "Enter the item IDs and names of menu items you want to roll out (format: ID,Name;ID,Name;...):",
+            "Enter the item ID for which you want to give feedback:",
+            "Enter the item ID you want to vote for:"
+    );
+
     public static void main(String[] args) {
-        String hostname = "localhost";
-        int port = 9202;
-
-        try (Socket socket = new Socket(hostname, port)) {
-            InputStream input = socket.getInputStream();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-
-            OutputStream output = socket.getOutputStream();
-            PrintWriter writer = new PrintWriter(output, true);
-
-            BufferedReader consoleReader = new BufferedReader(new InputStreamReader(System.in));
+        try (Socket socket = new Socket(HOSTNAME, PORT);
+             InputStream input = socket.getInputStream();
+             BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+             OutputStream output = socket.getOutputStream();
+             PrintWriter writer = new PrintWriter(output, true);
+             BufferedReader consoleReader = new BufferedReader(new InputStreamReader(System.in))) {
 
             String serverMessage;
             while ((serverMessage = reader.readLine()) != null) {
                 System.out.println(serverMessage);
-                if (serverMessage.contains("Please enter your username:") || serverMessage.contains("Please enter your password:") || serverMessage.contains("Enter item name:") || serverMessage.contains("Is it available (Yes/No):") || serverMessage.contains("Enter item ID to delete:") || serverMessage.contains("Enter item ID to update:") || serverMessage.contains("Enter new item name:") || serverMessage.contains("Please select an option:") || serverMessage.contains("What is the price of the item?")) {
+                if (isPrompt(serverMessage)) {
                     String userInput = consoleReader.readLine();
                     writer.println(userInput);
                 }
             }
         } catch (UnknownHostException e) {
-            System.out.println("Server not found: " + e.getMessage());
+            System.err.println("Server not found: " + e.getMessage());
         } catch (IOException e) {
-            System.out.println("I/O error: " + e.getMessage());
+            System.err.println("I/O error: " + e.getMessage());
         }
+    }
+
+    private static boolean isPrompt(String message) {
+        return PROMPTS.stream().anyMatch(message::contains);
     }
 }

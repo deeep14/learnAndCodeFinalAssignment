@@ -282,6 +282,7 @@ class ClientHandler extends Thread {
                     break;
                 case "2":
                     writer.println("Voting...");
+                    voteForMenuItem(writer, reader);
                     break;
                 case "3":
                     writer.println("Giving feedback...");
@@ -294,6 +295,50 @@ class ClientHandler extends Thread {
             break;
         }
     }
+
+    private static void voteForMenuItem(PrintWriter writer, BufferedReader reader) throws IOException {
+        writer.println("Rolled out items:");
+        displayRolledOutItems(writer);
+
+        writer.println("Enter the item ID you want to vote for:");
+        int itemId = Integer.parseInt(reader.readLine());
+        writer.println("Enter the item name:");
+        String itemName = reader.readLine();
+
+        if (updateVotes(itemId, itemName)) {
+            writer.println("Vote successfully submitted!");
+        } else {
+            writer.println("Failed to submit vote.");
+        }
+    }
+
+    private static boolean updateVotes(int itemId, String itemName) {
+        String query = "IF EXISTS (SELECT 1 FROM votes WHERE item_id = ?) " +
+                "BEGIN " +
+                "    UPDATE votes SET number_of_votes = number_of_votes + 1 WHERE item_id = ? " +
+                "END " +
+                "ELSE " +
+                "BEGIN " +
+                "    INSERT INTO votes (item_id, item_name, number_of_votes) VALUES (?, ?, 1) " +
+                "END";
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+
+            preparedStatement.setInt(1, itemId);
+            preparedStatement.setInt(2, itemId);
+            preparedStatement.setInt(3, itemId);
+            preparedStatement.setString(4, itemName);
+            int result = preparedStatement.executeUpdate();
+            return result > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+
+
 
     private static void displayRolledOutItems(PrintWriter writer) {
         String query = "SELECT item_id, item_name FROM rolled_out_items"; // Adjust this query based on your actual table and column names
