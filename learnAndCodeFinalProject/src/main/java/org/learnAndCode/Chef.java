@@ -21,6 +21,7 @@ public class Chef {
             writer.println("3. Display voted items");
             writer.println("4. Display menu items");
             writer.println("5. Send Notification");
+            writer.println("6. View Feedback");
             writer.println("Please select an option:");
 
             String option = reader.readLine();
@@ -51,6 +52,8 @@ public class Chef {
                 case "5":
                     sendNotification(writer, reader);
                     break;
+                case "6":
+                    //view feedback method
                 default:
                     writer.println("Invalid option. Please try again.");
                     continue;
@@ -92,8 +95,9 @@ public class Chef {
         writer.println("Enter the item IDs and names of menu items you want to roll out:");
         String input = reader.readLine();
         List<String> entries = Arrays.asList(input.split(";"));
-
-        if (storeRolledOutItems(entries)) {
+        writer.println("Enter the date for rolling out the menu (YYYY-MM-DD):");
+        String date = reader.readLine();
+        if (storeRolledOutItems(entries,date)) {
             writer.println("Items successfully rolled out.");
         } else {
             writer.println("Failed to roll out items.");
@@ -102,7 +106,10 @@ public class Chef {
 
     private static void displayVotedItems(PrintWriter writer) {
         try (Connection connection = DBConnection.getConnection();
-             PreparedStatement stmt = connection.prepareStatement("SELECT item_id, item_name, number_of_votes FROM votes");
+             PreparedStatement stmt = connection.prepareStatement(
+                     "SELECT TOP 5 item_id, item_name, number_of_votes FROM votes " +
+                             "WHERE date = (SELECT MAX(date) FROM votes) " +
+                             "ORDER BY number_of_votes DESC"); 
              ResultSet resultSet = stmt.executeQuery()) {
 
             boolean found = false;
@@ -123,8 +130,9 @@ public class Chef {
         }
     }
 
-    private static boolean storeRolledOutItems(List<String> entries) {
-        String query = "INSERT INTO rolled_out_items (item_id, item_name) VALUES (?, ?)";
+
+    private static boolean storeRolledOutItems(List<String> entries, String date) {
+        String query = "INSERT INTO rolled_out_items (item_id, item_name, date) VALUES (?, ?, ?)";
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(query)) {
 
@@ -135,6 +143,7 @@ public class Chef {
 
                 preparedStatement.setInt(1, itemId);
                 preparedStatement.setString(2, itemName);
+                preparedStatement.setDate(3, java.sql.Date.valueOf(date));
                 preparedStatement.addBatch();
             }
 
@@ -153,5 +162,4 @@ public class Chef {
         NotificationQueue.addNotification(message);
         writer.println("Notification sent successfully.");
     }
-
 }

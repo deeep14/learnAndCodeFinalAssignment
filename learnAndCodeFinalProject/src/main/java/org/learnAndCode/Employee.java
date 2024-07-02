@@ -61,30 +61,36 @@ public class Employee {
         int itemId = Integer.parseInt(reader.readLine());
         writer.println("Enter the item name:");
         String itemName = reader.readLine();
+        writer.println("Enter the date for your vote (YYYY-MM-DD):");
+        String voteDate = reader.readLine();
 
-        if (updateVotes(itemId, itemName)) {
+        if (updateVotes(itemId, itemName, voteDate)) {
             writer.println("Vote successfully submitted!");
         } else {
             writer.println("Failed to submit vote.");
         }
     }
 
-    private static boolean updateVotes(int itemId, String itemName) {
-        String query = "IF EXISTS (SELECT 1 FROM votes WHERE item_id = ?) " +
-                "BEGIN " +
-                "    UPDATE votes SET number_of_votes = number_of_votes + 1 WHERE item_id = ? " +
-                "END " +
+    private static boolean updateVotes(int itemId, String itemName, String voteDate) {
+        String query = "BEGIN IF EXISTS (SELECT 1 FROM votes WHERE item_id = ? AND date = ?) " +
+                "UPDATE votes SET number_of_votes = number_of_votes + 1 WHERE item_id = ? AND date = ? " +
                 "ELSE " +
-                "BEGIN " +
-                "    INSERT INTO votes (item_id, item_name, number_of_votes) VALUES (?, ?, 1) " +
+                "INSERT INTO votes (item_id, item_name, number_of_votes, date) VALUES (?, ?, 1, ?) " +
                 "END";
+
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(query)) {
 
             preparedStatement.setInt(1, itemId);
-            preparedStatement.setInt(2, itemId);
+            preparedStatement.setDate(2, java.sql.Date.valueOf(voteDate));
+
             preparedStatement.setInt(3, itemId);
-            preparedStatement.setString(4, itemName);
+            preparedStatement.setDate(4, java.sql.Date.valueOf(voteDate));
+
+            preparedStatement.setInt(5, itemId);
+            preparedStatement.setString(6, itemName);
+            preparedStatement.setDate(7, java.sql.Date.valueOf(voteDate));
+
             int result = preparedStatement.executeUpdate();
             return result > 0;
 
@@ -94,8 +100,10 @@ public class Employee {
         }
     }
 
+
     private static void displayRolledOutItems(PrintWriter writer) {
-        String query = "SELECT item_id, item_name FROM rolled_out_items"; // Adjust this query based on your actual table and column names
+        String query = "SELECT item_id, item_name, date FROM rolled_out_items " +
+                "WHERE date = (SELECT MAX(date) FROM rolled_out_items)";
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(query);
              ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -118,6 +126,7 @@ public class Employee {
         }
     }
 
+
     private static void giveFeedback(PrintWriter writer, BufferedReader reader) throws IOException {
         writer.println("Enter the item ID for which you want to give feedback:");
         int itemId = Integer.parseInt(reader.readLine());
@@ -128,7 +137,7 @@ public class Employee {
         writer.println("Enter your review:");
         String review = reader.readLine();
 
-        Feedback feedback = new Feedback(0, itemName, rating, review, itemId);  // feedbackId is auto-generated
+        Feedback feedback = new Feedback(0, itemName, rating, review, itemId);
         if (storeFeedback(feedback)) {
             writer.println("Feedback successfully submitted!");
         } else {
