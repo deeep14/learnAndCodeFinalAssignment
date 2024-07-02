@@ -12,7 +12,12 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 
-public class Chef {
+public class Chef extends User{
+
+    public Chef(String username, int roleId) {
+        super(username, roleId);
+    }
+
     public static void displayMenu(PrintWriter writer, BufferedReader reader) throws IOException {
         boolean continueSession = true;
         while (continueSession) {

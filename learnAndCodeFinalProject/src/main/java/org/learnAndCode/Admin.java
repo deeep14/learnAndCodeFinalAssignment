@@ -5,9 +5,15 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
 
-public class Admin {
+public class Admin extends User {
+
+    public Admin(String username, int roleId) {
+        super(username, roleId);
+    }
+
     public static void displayMenu(PrintWriter writer, BufferedReader reader) throws IOException {
-        while (true) {
+        boolean continueSession = true;
+        while (continueSession) {
             writer.println("Admin Menu:");
             writer.println("1. Add menu item");
             writer.println("2. Delete menu item");
@@ -40,9 +46,19 @@ public class Admin {
                     writer.println("Invalid option. Please try again.");
                     continue;
             }
-            break;
+            continueSession = askToContinue(writer, reader);
+
         }
+        writer.println("Thank you for using our cafeteria app!");
+
     }
+
+    private static boolean askToContinue(PrintWriter writer, BufferedReader reader) throws IOException {
+        writer.println("Do you want to perform another function? (yes/no)");
+        String response = reader.readLine();
+        return "yes".equalsIgnoreCase(response);
+    }
+
 
     private static void addMenuItem(PrintWriter writer, BufferedReader reader) throws IOException {
         writer.println("Enter item name:");

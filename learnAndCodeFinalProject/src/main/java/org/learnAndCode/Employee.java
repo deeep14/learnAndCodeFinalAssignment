@@ -10,7 +10,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class Employee {
+public class Employee extends User {
+
+    public Employee (String username, int roleId) {
+        super(username, roleId);
+    }
+
     public static void displayMenu(PrintWriter writer, BufferedReader reader) throws IOException {
         boolean continueSession = true;
         while (continueSession) {
