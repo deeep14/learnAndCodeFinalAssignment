@@ -14,7 +14,8 @@ import java.util.List;
 
 public class Chef {
     public static void displayMenu(PrintWriter writer, BufferedReader reader) throws IOException {
-        while (true) {
+        boolean continueSession = true;
+        while (continueSession) {
             writer.println("Chef Menu:");
             writer.println("1. Get recommendation");
             writer.println("2. Roll out menu");
@@ -46,24 +47,33 @@ public class Chef {
                     displayVotedItems(writer);
                     break;
                 case "4":
-                    writer.println("Displaying all menu items:");
+                    writer.println("Displaying all menu items");
                     displayMenuItems(writer);
                     break;
                 case "5":
                     sendNotification(writer, reader);
                     break;
                 case "6":
-                    //view feedback method
+                    writer.println("Viewing feedback");
+                    viewFeedback(writer);
+                    break;
                 default:
                     writer.println("Invalid option. Please try again.");
                     continue;
             }
-            break;
+            continueSession = askToContinue(writer, reader);
         }
+        writer.println("Thank you for using our cafeteria app!");
     }
 
+    private static boolean askToContinue(PrintWriter writer, BufferedReader reader) throws IOException {
+        writer.println("Do you want to perform another function? (yes/no)");
+        String response = reader.readLine();
+        return "yes".equalsIgnoreCase(response);
+    }
+
+
     private static void displayMenuItems(PrintWriter writer) {
-        writer.println("Displaying all menu items:");
         List<MenuItem> menuItems = MenuItemOperations.getAllMenuItems();
         if (menuItems.isEmpty()) {
             writer.println("No menu items found.");
@@ -109,7 +119,7 @@ public class Chef {
              PreparedStatement stmt = connection.prepareStatement(
                      "SELECT TOP 5 item_id, item_name, number_of_votes FROM votes " +
                              "WHERE date = (SELECT MAX(date) FROM votes) " +
-                             "ORDER BY number_of_votes DESC"); 
+                             "ORDER BY number_of_votes DESC");  // Using TOP 5 instead of LIMIT
              ResultSet resultSet = stmt.executeQuery()) {
 
             boolean found = false;
@@ -162,4 +172,33 @@ public class Chef {
         NotificationQueue.addNotification(message);
         writer.println("Notification sent successfully.");
     }
+
+    private static void viewFeedback(PrintWriter writer) {
+        String query = "SELECT item_id, item_name, rating, review FROM feedback " +
+                "WHERE feedback_date = (SELECT MAX(feedback_date) FROM feedback) " +
+                "ORDER BY item_id ASC";
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(query);
+             ResultSet resultSet = stmt.executeQuery()) {
+
+            boolean found = false;
+            while (resultSet.next()) {
+                int itemId = resultSet.getInt("item_id");
+                String itemName = resultSet.getString("item_name");
+                int rating = resultSet.getInt("rating");
+                String review = resultSet.getString("review");
+                writer.println("Item ID: " + itemId + ", Item Name: " + itemName + ", Rating: " + rating + ", Review: " + review);
+                found = true;
+            }
+
+            if (!found) {
+                writer.println("No feedback found.");
+            }
+        } catch (SQLException e) {
+            writer.println("Error retrieving feedback: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
 }

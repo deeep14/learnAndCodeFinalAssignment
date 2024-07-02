@@ -12,7 +12,8 @@ import java.sql.SQLException;
 
 public class Employee {
     public static void displayMenu(PrintWriter writer, BufferedReader reader) throws IOException {
-        while (true) {
+        boolean continueSession = true;
+        while (continueSession) {
             writer.println("Employee Menu:");
             writer.println("1. View rolled out items");
             writer.println("2. Vote");
@@ -49,9 +50,17 @@ public class Employee {
                     writer.println("Invalid option. Please try again.");
                     continue;
             }
-            break;
+            continueSession = askToContinue(writer, reader);
         }
+        writer.println("Thank you for using our cafeteria app!");
     }
+
+    private static boolean askToContinue(PrintWriter writer, BufferedReader reader) throws IOException {
+        writer.println("Do you want to perform another function? (yes/no)");
+        String response = reader.readLine();
+        return "yes".equalsIgnoreCase(response);
+    }
+
 
     private static void voteForMenuItem(PrintWriter writer, BufferedReader reader) throws IOException {
         writer.println("Rolled out items:");
@@ -72,6 +81,7 @@ public class Employee {
     }
 
     private static boolean updateVotes(int itemId, String itemName, String voteDate) {
+        // SQL statement to handle the voting logic
         String query = "BEGIN IF EXISTS (SELECT 1 FROM votes WHERE item_id = ? AND date = ?) " +
                 "UPDATE votes SET number_of_votes = number_of_votes + 1 WHERE item_id = ? AND date = ? " +
                 "ELSE " +
@@ -137,7 +147,7 @@ public class Employee {
         writer.println("Enter your review:");
         String review = reader.readLine();
 
-        Feedback feedback = new Feedback(0, itemName, rating, review, itemId);
+        Feedback feedback = new Feedback(0, itemName, rating, review, itemId);  // feedbackId is auto-generated
         if (storeFeedback(feedback)) {
             writer.println("Feedback successfully submitted!");
         } else {
@@ -146,7 +156,7 @@ public class Employee {
     }
 
     private static boolean storeFeedback(Feedback feedback) {
-        String query = "INSERT INTO feedback (item_name, rating, review, item_id) VALUES (?, ?, ?, ?)";
+        String query = "INSERT INTO feedback (item_name, rating, review, item_id, feedback_date) VALUES (?, ?, ?, ?, ?)";
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(query)) {
 
@@ -154,6 +164,7 @@ public class Employee {
             preparedStatement.setInt(2, feedback.getRating());
             preparedStatement.setString(3, feedback.getReview());
             preparedStatement.setInt(4, feedback.getItemId());
+            preparedStatement.setDate(5, new java.sql.Date(System.currentTimeMillis()));
             int result = preparedStatement.executeUpdate();
             return result > 0;
 
@@ -162,6 +173,7 @@ public class Employee {
             return false;
         }
     }
+
 
     private static void checkNotification(PrintWriter writer) {
         if (NotificationQueue.hasNotifications()) {
