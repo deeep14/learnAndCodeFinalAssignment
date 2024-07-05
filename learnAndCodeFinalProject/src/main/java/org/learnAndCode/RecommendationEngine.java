@@ -14,7 +14,7 @@ public class RecommendationEngine {
     public static List<MenuItem> getRecommendations() {
         List<MenuItem> recommendations = new ArrayList<>();
 
-        String query = "SELECT TOP 5 item_id, item_name, rating, review " +
+        String query = "SELECT item_id, item_name, rating, review " +
                 "FROM MenuItems " +
                 "WHERE rating IS NOT NULL " +
                 "ORDER BY rating DESC";
@@ -30,8 +30,10 @@ public class RecommendationEngine {
                 int rating = resultSet.getInt("rating");
                 String review = resultSet.getString("review");
 
-                MenuItem menuItem = new MenuItem(itemId, itemName, rating, review);
-                recommendations.add(menuItem);
+                if (rating > 3 && SentimentAnalysis.isPositiveReview(review)) {
+                    MenuItem menuItem = new MenuItem(itemId, itemName, rating, review);
+                    recommendations.add(menuItem);
+                }
             }
 
         } catch (SQLException e) {
