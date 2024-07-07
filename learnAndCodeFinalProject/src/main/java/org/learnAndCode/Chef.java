@@ -28,6 +28,8 @@ public class Chef extends User{
             writer.println("4. Display menu items");
             writer.println("5. Send Notification");
             writer.println("6. View Feedback");
+            writer.println("7. Discard low rated Menu Items");
+            writer.println("8. View Discarded Menu Items");
             writer.println("Please select an option:");
 
             String option = reader.readLine();
@@ -61,6 +63,14 @@ public class Chef extends User{
                 case "6":
                     writer.println("Viewing feedback");
                     viewFeedback(writer);
+                    break;
+                case "7":
+                    writer.println("Discarding low-rated items...");
+                    discardLowRatedItems(writer);
+                    break;
+                case "8":
+                    writer.println("Viewing discarded items...");
+                    viewDiscardedItems(writer);
                     break;
                 default:
                     writer.println("Invalid option. Please try again.");
@@ -202,6 +212,40 @@ public class Chef extends User{
             }
         } catch (SQLException e) {
             writer.println("Error retrieving feedback: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private static void discardLowRatedItems(PrintWriter writer) {
+        if (RecommendationEngine.discardLowRatedItems()) {
+            writer.println("Low-rated items successfully discarded.");
+        } else {
+            writer.println("Failed to discard low-rated items.");
+        }
+    }
+
+    private static void viewDiscardedItems(PrintWriter writer) {
+        String query = "SELECT item_id, item_name, rating, review FROM discarded_menu_items ORDER BY item_id ASC";
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(query);
+             ResultSet resultSet = stmt.executeQuery()) {
+
+            boolean found = false;
+            while (resultSet.next()) {
+                int itemId = resultSet.getInt("item_id");
+                String itemName = resultSet.getString("item_name");
+                int rating = resultSet.getInt("rating");
+                String review = resultSet.getString("review");
+                writer.println("Item ID: " + itemId + ", Item Name: " + itemName + ", Rating: " + rating + ", Review: " + review);
+                found = true;
+            }
+
+            if (!found) {
+                writer.println("No discarded items found.");
+            }
+        } catch (SQLException e) {
+            writer.println("Error retrieving discarded items: " + e.getMessage());
             e.printStackTrace();
         }
     }

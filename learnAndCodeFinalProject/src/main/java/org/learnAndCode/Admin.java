@@ -1,8 +1,14 @@
 package org.learnAndCode;
 
+import org.learnAndCode.Database.DBConnection;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 
 public class Admin extends User {
@@ -19,6 +25,7 @@ public class Admin extends User {
             writer.println("2. Delete menu item");
             writer.println("3. Update menu item");
             writer.println("4. Display menu items");
+            writer.println("5. View discarded items");
             writer.println("Please select an option:");
 
             String option = reader.readLine();
@@ -42,15 +49,16 @@ public class Admin extends User {
                 case "4":
                     displayMenuItems(writer);
                     break;
+                case "5":
+                    viewDiscardedItems(writer);
+                    break;
                 default:
                     writer.println("Invalid option. Please try again.");
                     continue;
             }
             continueSession = askToContinue(writer, reader);
-
         }
         writer.println("Thank you for using our cafeteria app!");
-
     }
 
     private static boolean askToContinue(PrintWriter writer, BufferedReader reader) throws IOException {
@@ -58,7 +66,6 @@ public class Admin extends User {
         String response = reader.readLine();
         return "yes".equalsIgnoreCase(response);
     }
-
 
     private static void addMenuItem(PrintWriter writer, BufferedReader reader) throws IOException {
         writer.println("Enter item name:");
@@ -108,6 +115,32 @@ public class Admin extends User {
                 writer.println("Item ID: " + item.getItemId() + ", Name: " + item.getItemName() +
                         ", Rating: " + item.getRating() + ", Review: " + item.getReview());
             }
+        }
+    }
+
+    private static void viewDiscardedItems(PrintWriter writer) {
+        String query = "SELECT item_id, item_name, rating, review FROM discarded_menu_items ORDER BY item_id ASC";
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(query);
+             ResultSet resultSet = stmt.executeQuery()) {
+
+            boolean found = false;
+            while (resultSet.next()) {
+                int itemId = resultSet.getInt("item_id");
+                String itemName = resultSet.getString("item_name");
+                int rating = resultSet.getInt("rating");
+                String review = resultSet.getString("review");
+                writer.println("Item ID: " + itemId + ", Item Name: " + itemName + ", Rating: " + rating + ", Review: " + review);
+                found = true;
+            }
+
+            if (!found) {
+                writer.println("No discarded items found.");
+            }
+        } catch (SQLException e) {
+            writer.println("Error retrieving discarded items: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
