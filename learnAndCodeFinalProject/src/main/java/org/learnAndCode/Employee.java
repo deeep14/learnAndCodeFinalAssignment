@@ -56,6 +56,10 @@ public class Employee extends User {
                     writer.println("Giving detailed feedback...");
                     giveDetailedFeedback(writer, reader);
                     break;
+                case "6":
+                    writer.println("Updating profile...");
+                    updateProfile(writer, reader);
+                    break;
                 default:
                     writer.println("Invalid option. Please try again.");
                     continue;
@@ -260,4 +264,53 @@ public class Employee extends User {
             return false;
         }
     }
+    private static void updateProfile(PrintWriter writer, BufferedReader reader) throws IOException {
+
+        writer.println("Enter your username:");
+        String username = reader.readLine();
+        writer.println("Enter your food type (veg, non veg, egg):");
+        String foodType = reader.readLine();
+        writer.println("Enter your spice level (high, medium, low):");
+        String spiceLevel = reader.readLine();
+        writer.println("Enter your region preference (north indian, south indian):");
+        String regionPreference = reader.readLine();
+        writer.println("Do you have a sweet tooth? (yes/no):");
+        boolean sweetTooth = "yes".equalsIgnoreCase(reader.readLine());
+
+        if (storeProfile(username, foodType, spiceLevel, regionPreference, sweetTooth)) {
+            writer.println("Profile successfully updated!");
+        } else {
+            writer.println("Failed to update profile.");
+        }
+    }
+
+    private static boolean storeProfile(String username, String foodType, String spiceLevel, String regionPreference, boolean sweetTooth) {
+        String query = "MERGE INTO profiles AS target " +
+                "USING (VALUES (?, ?, ?, ?, ?)) AS source (username, food_type, spice_level, region_preference, sweet_tooth) " +
+                "ON target.username = source.username " +
+                "WHEN MATCHED THEN " +
+                "UPDATE SET food_type = source.food_type, spice_level = source.spice_level, region_preference = source.region_preference, sweet_tooth = source.sweet_tooth " +
+                "WHEN NOT MATCHED THEN " +
+                "INSERT (username, food_type, spice_level, region_preference, sweet_tooth) " +
+                "VALUES (source.username, source.food_type, source.spice_level, source.region_preference, source.sweet_tooth);";
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+
+            preparedStatement.setString(1, username);
+            preparedStatement.setString(2, foodType);
+            preparedStatement.setString(3, spiceLevel);
+            preparedStatement.setString(4, regionPreference);
+            preparedStatement.setBoolean(5, sweetTooth);
+
+            int result = preparedStatement.executeUpdate();
+            return result > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+
 }
