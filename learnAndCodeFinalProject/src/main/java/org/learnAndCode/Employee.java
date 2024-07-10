@@ -12,7 +12,7 @@ import java.sql.SQLException;
 
 public class Employee extends User {
 
-    public Employee (String username, int roleId) {
+    public Employee(String username, int roleId) {
         super(username, roleId);
     }
 
@@ -24,6 +24,7 @@ public class Employee extends User {
             writer.println("2. Vote");
             writer.println("3. Give feedback");
             writer.println("4. Check Notifications");
+            writer.println("5. Give detailed feedback");
             writer.println("Please select an option:");
 
             String option = reader.readLine();
@@ -51,6 +52,10 @@ public class Employee extends User {
                     writer.println("Checking notifications...");
                     checkNotification(writer);
                     break;
+                case "5":
+                    writer.println("Giving detailed feedback...");
+                    giveDetailedFeedback(writer, reader);
+                    break;
                 default:
                     writer.println("Invalid option. Please try again.");
                     continue;
@@ -65,7 +70,6 @@ public class Employee extends User {
         String response = reader.readLine();
         return "yes".equalsIgnoreCase(response);
     }
-
 
     private static void voteForMenuItem(PrintWriter writer, BufferedReader reader) throws IOException {
         writer.println("Rolled out items:");
@@ -86,7 +90,6 @@ public class Employee extends User {
     }
 
     private static boolean updateVotes(int itemId, String itemName, String voteDate) {
-        // SQL statement to handle the voting logic
         String query = "BEGIN IF EXISTS (SELECT 1 FROM votes WHERE item_id = ? AND date = ?) " +
                 "UPDATE votes SET number_of_votes = number_of_votes + 1 WHERE item_id = ? AND date = ? " +
                 "ELSE " +
@@ -115,7 +118,6 @@ public class Employee extends User {
         }
     }
 
-
     private static void displayRolledOutItems(PrintWriter writer) {
         String query = "SELECT item_id, item_name, date FROM rolled_out_items " +
                 "WHERE date = (SELECT MAX(date) FROM rolled_out_items)";
@@ -140,7 +142,6 @@ public class Employee extends User {
             e.printStackTrace();
         }
     }
-
 
     private static void giveFeedback(PrintWriter writer, BufferedReader reader) throws IOException {
         writer.println("Enter the item ID for which you want to give feedback:");
@@ -179,7 +180,6 @@ public class Employee extends User {
         }
     }
 
-
     private static void checkNotification(PrintWriter writer) {
         if (NotificationQueue.hasNotifications()) {
             writer.println("Notifications:");
@@ -188,6 +188,76 @@ public class Employee extends User {
             }
         } else {
             writer.println("No new notifications.");
+        }
+    }
+
+    private static void giveDetailedFeedback(PrintWriter writer, BufferedReader reader) throws IOException {
+        writer.println("Displaying discarded menu items...");
+        displayDiscardedItems(writer);
+
+        writer.println("Enter the item ID for which you want to give detailed feedback:");
+        int itemId = Integer.parseInt(reader.readLine());
+
+        writer.println("Enter the reason for dislike:");
+        String dislikeReason = reader.readLine();
+
+        writer.println("Enter your improvement suggestion:");
+        String improvementSuggestion = reader.readLine();
+
+        writer.println("Enter mom's recipe:");
+        String momsRecipe = reader.readLine();
+
+        DetailedFeedback detailedFeedback = new DetailedFeedback(itemId, dislikeReason, improvementSuggestion, momsRecipe);
+        if (storeDetailedFeedback(detailedFeedback)) {
+            writer.println("Detailed feedback successfully submitted!");
+        } else {
+            writer.println("Failed to submit detailed feedback.");
+        }
+    }
+
+    private static void displayDiscardedItems(PrintWriter writer) {
+        String query = "SELECT item_id, item_name, rating, review, discarded_date FROM discarded_menu_items";
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(query);
+             ResultSet resultSet = preparedStatement.executeQuery()) {
+
+            boolean itemsFound = false;
+            while (resultSet.next()) {
+                int itemId = resultSet.getInt("item_id");
+                String itemName = resultSet.getString("item_name");
+                int rating = resultSet.getInt("rating");
+                String review = resultSet.getString("review");
+                java.sql.Date discardedDate = resultSet.getDate("discarded_date");
+                writer.println("Item ID: " + itemId + ", Name: " + itemName + ", Rating: " + rating + ", Review: " + review + ", Discarded Date: " + discardedDate);
+                itemsFound = true;
+            }
+
+            if (!itemsFound) {
+                writer.println("No items have been discarded yet.");
+            }
+
+        } catch (SQLException e) {
+            writer.println("Error retrieving discarded items: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private static boolean storeDetailedFeedback(DetailedFeedback feedback) {
+        String query = "INSERT INTO detailed_feedback (item_id, dislike_reason, improvement_suggestion, moms_recipe, feedback_date) VALUES (?, ?, ?, ?, ?)";
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+
+            preparedStatement.setInt(1, feedback.getItemId());
+            preparedStatement.setString(2, feedback.getDislikeReason());
+            preparedStatement.setString(3, feedback.getImprovementSuggestion());
+            preparedStatement.setString(4, feedback.getMomsRecipe());
+            preparedStatement.setDate(5, new java.sql.Date(System.currentTimeMillis()));
+            int result = preparedStatement.executeUpdate();
+            return result > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
         }
     }
 }

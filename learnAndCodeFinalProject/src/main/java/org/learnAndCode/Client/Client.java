@@ -22,9 +22,21 @@ public class Client {
             "Enter the item name:",
             "Enter your rating (1-5):",
             "Enter your review:",
-            "Enter the item IDs and names of menu items you want to roll out (format: ID,Name;ID,Name;...):",
+            "Enter the item IDs and names of menu items you want to roll out:",
             "Enter the item ID for which you want to give feedback:",
-            "Enter the item ID you want to vote for:"
+            "Enter the item ID you want to vote for:",
+            "Enter the item name:",
+            "Enter the notification message:",
+            "Enter the date for rolling out the menu (YYYY-MM-DD):",
+            "Enter the date for your vote (YYYY-MM-DD)",
+            "Do you want to perform another function? (yes/no)",
+            "Enter the Item ID to remove:",
+            "Enter the Item ID to get more feedback:",
+            "Choose an option:",
+            "Enter the item ID for which you want to give detailed feedback:",
+            "Enter the reason for dislike:",
+            "Enter your improvement suggestion:",
+            "Enter mom's recipe:"
     );
 
     public static void main(String[] args) {

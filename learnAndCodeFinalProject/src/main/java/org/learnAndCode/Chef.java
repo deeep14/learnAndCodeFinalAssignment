@@ -70,7 +70,7 @@ public class Chef extends User{
                     break;
                 case "8":
                     writer.println("Viewing discarded items...");
-                    viewDiscardedItems(writer);
+                    viewDiscardedItems(writer, reader);
                     break;
                 default:
                     writer.println("Invalid option. Please try again.");
@@ -224,7 +224,7 @@ public class Chef extends User{
         }
     }
 
-    private static void viewDiscardedItems(PrintWriter writer) {
+    private static void viewDiscardedItems(PrintWriter writer, BufferedReader reader) throws IOException {
         String query = "SELECT item_id, item_name, rating, review FROM discarded_menu_items ORDER BY item_id ASC";
 
         try (Connection connection = DBConnection.getConnection();
@@ -243,10 +243,74 @@ public class Chef extends User{
 
             if (!found) {
                 writer.println("No discarded items found.");
+            } else {
+                writer.println("1. Remove an item from the list");
+                writer.println("2. Get more feedback on an item");
+                writer.println("3. Go back");
+                writer.println("Choose an option:");
+
+                String option = reader.readLine();
+
+                switch (option) {
+                    case "1":
+                        writer.println("Enter the Item ID to remove:");
+                        int itemIdToRemove = Integer.parseInt(reader.readLine().trim());
+                        removeDiscardedItem(writer, itemIdToRemove);
+                        break;
+                    case "2":
+                        writer.println("Enter the Item ID to get more feedback:");
+                        int itemIdForFeedback = Integer.parseInt(reader.readLine().trim());
+                        getMoreFeedback(writer, itemIdForFeedback);
+                        break;
+                    case "3":
+                        return;
+                    default:
+                        writer.println("Invalid option. Returning to menu.");
+                }
             }
         } catch (SQLException e) {
             writer.println("Error retrieving discarded items: " + e.getMessage());
-            e.printStackTrace();
+        }
+    }
+
+    private static void removeDiscardedItem(PrintWriter writer, int itemId) {
+        String query = "DELETE FROM discarded_menu_items WHERE item_id = ?";
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(query)) {
+
+            stmt.setInt(1, itemId);
+            int rowsAffected = stmt.executeUpdate();
+            if (rowsAffected > 0) {
+                writer.println("Item removed successfully.");
+            } else {
+                writer.println("Item not found.");
+            }
+        } catch (SQLException e) {
+            writer.println("Error removing item: " + e.getMessage());
+        }
+    }
+
+    private static void getMoreFeedback(PrintWriter writer, int itemId) {
+        String query = "SELECT dislike_reason, improvement_suggestion, moms_recipe FROM detailed_feedback WHERE item_id = ?";
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(query)) {
+
+            stmt.setInt(1, itemId);
+            ResultSet resultSet = stmt.executeQuery();
+            if (resultSet.next()) {
+                String detailedFeedback = resultSet.getString("dislike_reason");
+                String improviseSuggestions = resultSet.getString("improvement_suggestion");
+                String momsRecipe = resultSet.getString("moms_recipe");
+                writer.println("Detailed Feedback: " + detailedFeedback);
+                writer.println("Suggestions to Improvise: " + improviseSuggestions);
+                writer.println("Mom's Recipe: " + momsRecipe);
+            } else {
+                writer.println("No detailed feedback found for the item.");
+            }
+        } catch (SQLException e) {
+            writer.println("Error retrieving detailed feedback: " + e.getMessage());
         }
     }
 
