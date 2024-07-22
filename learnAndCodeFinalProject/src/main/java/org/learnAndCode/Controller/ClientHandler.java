@@ -1,11 +1,11 @@
-package org.learnAndCode.Server;
+package org.learnAndCode.Controller;
 
-import org.learnAndCode.*;
+import org.learnAndCode.Model.*;
 
 import java.io.*;
 import java.net.Socket;
 
-class ClientHandler extends Thread {
+public class ClientHandler extends Thread {
     private Socket socket;
 
     public ClientHandler(Socket socket) {

@@ -1,4 +1,4 @@
-package org.learnAndCode.Client;
+package org.learnAndCode.Controller;
 
 import java.io.*;
 import java.net.Socket;
@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 public class Client {
     private static final String HOSTNAME = "localhost";
     private static final int PORT = 9202;
-    private static final String PROMPTS_FILE = "src/main/java/org/learnAndCode/Client/prompts.txt";
+    private static final String PROMPTS_FILE = "src/main/java/org/learnAndCode/Util/prompts.txt";
     private static List<String> PROMPTS;
 
     public static void main(String[] args) {

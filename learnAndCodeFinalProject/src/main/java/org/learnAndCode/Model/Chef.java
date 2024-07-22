@@ -1,6 +1,9 @@
-package org.learnAndCode;
+package org.learnAndCode.Model;
 
-import org.learnAndCode.Database.DBConnection;
+import org.learnAndCode.Service.DBConnection;
+import org.learnAndCode.Service.MenuItemOperations;
+import org.learnAndCode.Service.NotificationQueue;
+import org.learnAndCode.Service.RecommendationEngine;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -13,7 +16,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class Chef extends User{
-
+    private static final String YES_RESPONSE = "yes";
     public Chef(String username, int roleId) {
         super(username, roleId);
     }
@@ -84,7 +87,7 @@ public class Chef extends User{
     private static boolean askToContinue(PrintWriter writer, BufferedReader reader) throws IOException {
         writer.println("Do you want to perform another function? (yes/no)");
         String response = reader.readLine();
-        return "yes".equalsIgnoreCase(response);
+        return YES_RESPONSE.equalsIgnoreCase(response);
     }
 
 

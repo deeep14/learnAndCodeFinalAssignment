@@ -1,6 +1,7 @@
-package org.learnAndCode;
+package org.learnAndCode.Model;
 
-import org.learnAndCode.Database.DBConnection;
+import org.learnAndCode.Service.DBConnection;
+import org.learnAndCode.Service.NotificationQueue;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -11,7 +12,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class Employee extends User {
-
+    private static final String YES_RESPONSE = "yes";
     public Employee(String username, int roleId) {
         super(username, roleId);
     }
@@ -72,7 +73,7 @@ public class Employee extends User {
     private static boolean askToContinue(PrintWriter writer, BufferedReader reader) throws IOException {
         writer.println("Do you want to perform another function? (yes/no)");
         String response = reader.readLine();
-        return "yes".equalsIgnoreCase(response);
+        return YES_RESPONSE.equalsIgnoreCase(response);
     }
 
     private static void voteForMenuItem(PrintWriter writer, BufferedReader reader) throws IOException {
