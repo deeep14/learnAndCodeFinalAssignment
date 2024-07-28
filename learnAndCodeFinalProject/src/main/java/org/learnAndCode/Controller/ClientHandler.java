@@ -7,6 +7,7 @@ import java.net.Socket;
 
 public class ClientHandler extends Thread {
     private Socket socket;
+    private String currentUsername;
 
     public ClientHandler(Socket socket) {
         this.socket = socket;
@@ -21,38 +22,55 @@ public class ClientHandler extends Thread {
             OutputStream output = socket.getOutputStream();
             PrintWriter writer = new PrintWriter(output, true);
 
-            writer.println("Please enter your username:");
-            String username = reader.readLine();
-            System.out.println("Username entered: " + username);
+            boolean loginSuccess = false;
+            User user = null;
 
-            writer.println("Please enter your password:");
-            String password = reader.readLine();
-            System.out.println("Password entered.");
+            while (true) {
+                while (!loginSuccess) {
+                    writer.println("Please enter your username:");
+                    String username = reader.readLine();
+                    System.out.println("Username entered: " + username);
 
-            User user = Login.validateLogin(username, password);
+                    writer.println("Please enter your password:");
+                    String password = reader.readLine();
+                    System.out.println("Password entered.");
 
-            if (user != null) {
+                    user = Login.validateLogin(username, password);
+
+                    if (user != null) {
+                        loginSuccess = true;
+                        currentUsername = username;
+                        user.setUsername(currentUsername);
+                    } else {
+                        writer.println("Invalid login. Try again.");
+                    }
+                }
+
                 int roleId = user.getRoleId();
                 System.out.println("User role ID: " + roleId);
+
+                boolean continueSession = false;
                 switch (roleId) {
                     case 1:
                         writer.println("Welcome Admin!");
-                        Admin.displayMenu(writer, reader);
+                        continueSession = Admin.displayMenu(writer, reader);
                         break;
                     case 2:
                         writer.println("Welcome Chef!");
-                        Chef.displayMenu(writer, reader);
+                        continueSession = Chef.displayMenu(writer, reader);
                         break;
                     case 3:
                         writer.println("Welcome Employee!");
-                        Employee.displayMenu(writer, reader);
+                        continueSession = Employee.displayMenu(writer, reader);
                         break;
                     default:
                         writer.println("Welcome User!");
                         break;
                 }
-            } else {
-                writer.println("Invalid login. Try again.");
+
+                if (!continueSession) {
+                    loginSuccess = false;
+                }
             }
         } catch (IOException e) {
             System.out.println("Server exception: " + e.getMessage());

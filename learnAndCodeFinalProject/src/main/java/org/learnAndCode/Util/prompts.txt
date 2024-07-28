@@ -40,3 +40,4 @@ Enter user ID:
 Enter username:
 Enter role ID (1 for admin, 2 for chef, and 3 for employee):
 Enter password:
+Enter your username to display your profile:

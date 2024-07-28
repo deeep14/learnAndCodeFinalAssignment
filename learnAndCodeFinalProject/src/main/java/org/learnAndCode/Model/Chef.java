@@ -190,7 +190,7 @@ public class Chef extends User {
              PreparedStatement stmt = connection.prepareStatement(
                      "SELECT TOP 5 item_id, item_name, number_of_votes FROM votes " +
                              "WHERE date = (SELECT MAX(date) FROM votes) " +
-                             "ORDER BY number_of_votes DESC"); 
+                             "ORDER BY number_of_votes DESC");
              ResultSet resultSet = stmt.executeQuery()) {
 
             boolean found = false;

@@ -11,8 +11,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Employee extends User {
     public Employee(String username, int roleId) {
@@ -28,9 +30,10 @@ public class Employee extends User {
             writer.println("2. Vote");
             writer.println("3. Give feedback");
             writer.println("4. Check Notifications");
-            writer.println("5. Give detailed feedback on discarded food items:");
+            writer.println("5. Give detailed feedback on discarded food items");
             writer.println("6. Update Profile");
-            writer.println("7. Logout");
+            writer.println("7. Display Current Profile");
+            writer.println("8. Logout");
             writer.println("Please select an option:");
 
             String option = reader.readLine();
@@ -48,7 +51,7 @@ public class Employee extends User {
                     break;
                 case "1":
                     writer.println("Displaying rolled out items...");
-                    displayRolledOutItems(writer);
+                    displayRolledOutItems(writer, getUsername());
                     break;
                 case "2":
                     writer.println("Voting...");
@@ -71,6 +74,10 @@ public class Employee extends User {
                     updateProfile(writer, reader);
                     break;
                 case "7":
+                    writer.println("Displaying current profile...");
+                    displayCurrentUserProfile(writer, getUsername());
+                    break;
+                case "8":
                     writer.println("Thank you for using our cafeteria app!");
                     continueSession = false;
                     break;
@@ -104,7 +111,7 @@ public class Employee extends User {
 
     private static void voteForMenuItem(PrintWriter writer, BufferedReader reader) throws IOException {
         writer.println("Rolled out items:");
-        displayRolledOutItems(writer);
+        displayRolledOutItems(writer, null);
 
         writer.println("Enter the item ID you want to vote for:");
         int itemId = Integer.parseInt(reader.readLine());
@@ -151,30 +158,85 @@ public class Employee extends User {
         }
     }
 
+    private static void displayRolledOutItems(PrintWriter writer, String username) {
+        List<RolledOutItem> rolledOutItems = new ArrayList<>();
+        String foodType = getUserFoodType(username);
 
-    private static void displayRolledOutItems(PrintWriter writer) {
         String query = "SELECT item_id, item_name, date FROM rolled_out_items " +
                 "WHERE date = (SELECT MAX(date) FROM rolled_out_items)";
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(query);
              ResultSet resultSet = preparedStatement.executeQuery()) {
 
-            boolean itemsFound = false;
             while (resultSet.next()) {
                 int itemId = resultSet.getInt("item_id");
                 String itemName = resultSet.getString("item_name");
-                writer.println("Item ID: " + itemId + ", Name: " + itemName);
-                itemsFound = true;
+                rolledOutItems.add(new RolledOutItem(itemId, itemName));
             }
 
-            if (!itemsFound) {
+            if (foodType != null) {
+                if (foodType.equalsIgnoreCase("non veg")) {
+                    rolledOutItems.sort((a, b) -> {
+                        if (isNonVeg(a.getItemName()) && !isNonVeg(b.getItemName())) {
+                            return -1;
+                        } else if (!isNonVeg(a.getItemName()) && isNonVeg(b.getItemName())) {
+                            return 1;
+                        } else {
+                            return 0;
+                        }
+                    });
+                } else {
+                    rolledOutItems.sort((a, b) -> {
+                        if (isNonVeg(a.getItemName()) && !isNonVeg(b.getItemName())) {
+                            return 1;
+                        } else if (!isNonVeg(a.getItemName()) && isNonVeg(b.getItemName())) {
+                            return -1;
+                        } else {
+                            return 0;
+                        }
+                    });
+                }
+            }
+
+            if (rolledOutItems.isEmpty()) {
                 writer.println("No items have been rolled out yet.");
+            } else {
+                for (RolledOutItem item : rolledOutItems) {
+                    writer.println("Item ID: " + item.getItemId() + ", Name: " + item.getItemName());
+                }
             }
 
         } catch (SQLException e) {
             writer.println("Error retrieving rolled out items: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    private static String getUserFoodType(String username) {
+        String query = "SELECT food_type FROM profiles WHERE username = ?";
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+
+            preparedStatement.setString(1, username);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getString("food_type");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private static boolean isNonVeg(String itemName) {
+        return itemName.toLowerCase().contains("chicken") ||
+                itemName.toLowerCase().contains("mutton") ||
+                itemName.toLowerCase().contains("fish") ||
+                itemName.toLowerCase().contains("egg") ||
+                itemName.toLowerCase().contains("prawn") ||
+                itemName.toLowerCase().contains("beef") ||
+                itemName.toLowerCase().contains("pork");
     }
 
     private static void giveFeedback(PrintWriter writer, BufferedReader reader) throws IOException {
@@ -305,7 +367,7 @@ public class Employee extends User {
         String spiceLevel = reader.readLine();
         writer.println("Enter your region preference (north indian, south indian):");
         String regionPreference = reader.readLine();
-        writer.println("Do you have a sweet tooth? (1/0):");
+        writer.println("Do you have a sweet tooth? (yes/no):");
         boolean sweetTooth = "yes".equalsIgnoreCase(reader.readLine());
 
         if (storeProfile(username, foodType, spiceLevel, regionPreference, sweetTooth)) {
@@ -340,6 +402,37 @@ public class Employee extends User {
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+    private static void displayCurrentUserProfile(PrintWriter writer, String username) {
+        String query = "SELECT profile_id, username, food_type, spice_level, region_preference, sweet_tooth FROM profiles WHERE username = ?";
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+
+            preparedStatement.setString(1, username);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    int profileId = resultSet.getInt("profile_id");
+                    String foodType = resultSet.getString("food_type");
+                    String spiceLevel = resultSet.getString("spice_level");
+                    String regionPreference = resultSet.getString("region_preference");
+                    boolean sweetTooth = resultSet.getBoolean("sweet_tooth");
+
+                    writer.println("Profile ID: " + profileId);
+                    writer.println("Username: " + username);
+                    writer.println("Food Type: " + foodType);
+                    writer.println("Spice Level: " + spiceLevel);
+                    writer.println("Region Preference: " + regionPreference);
+                    writer.println("Sweet Tooth: " + (sweetTooth ? "Yes" : "No"));
+                } else {
+                    writer.println("Profile not found for username: " + username);
+                }
+            }
+        } catch (SQLException e) {
+            writer.println("Error retrieving profile: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
