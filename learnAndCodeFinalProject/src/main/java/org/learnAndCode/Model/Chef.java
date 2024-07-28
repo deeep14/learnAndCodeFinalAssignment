@@ -12,16 +12,18 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 
-public class Chef extends User{
+public class Chef extends User {
     private static final String YES_RESPONSE = "yes";
     public Chef(String username, int roleId) {
         super(username, roleId);
     }
 
-    public static void displayMenu(PrintWriter writer, BufferedReader reader) throws IOException {
+    public static boolean displayMenu(PrintWriter writer, BufferedReader reader) throws IOException {
         boolean continueSession = true;
         while (continueSession) {
             writer.println("Chef Menu:");
@@ -33,6 +35,7 @@ public class Chef extends User{
             writer.println("6. View Feedback");
             writer.println("7. Discard low rated Menu Items");
             writer.println("8. View Discarded Menu Items");
+            writer.println("9. Logout");
             writer.println("Please select an option:");
 
             String option = reader.readLine();
@@ -75,21 +78,25 @@ public class Chef extends User{
                     writer.println("Viewing discarded items...");
                     viewDiscardedItems(writer, reader);
                     break;
+                case "9":
+                    writer.println("Thank you for using our cafeteria app!");
+                    continueSession = false;
+                    break;
                 default:
                     writer.println("Invalid option. Please try again.");
                     continue;
             }
-            continueSession = askToContinue(writer, reader);
+
+            if (continueSession) {
+                continueSession = askToContinue(writer, reader);
+            }
         }
-        writer.println("Thank you for using our cafeteria app!");
+        return continueSession;
     }
 
     private static boolean askToContinue(PrintWriter writer, BufferedReader reader) throws IOException {
-        writer.println("Do you want to perform another function? (yes/no)");
-        String response = reader.readLine();
-        return YES_RESPONSE.equalsIgnoreCase(response);
+        return true;
     }
-
 
     private static void displayMenuItems(PrintWriter writer) {
         List<MenuItem> menuItems = MenuItemOperations.getAllMenuItems();
@@ -103,7 +110,6 @@ public class Chef extends User{
         }
     }
 
-
     private static void getRecommendation(PrintWriter writer) {
         List<MenuItem> recommendations = RecommendationEngine.getRecommendations();
         writer.println("Top 5 Menu Items:");
@@ -113,6 +119,7 @@ public class Chef extends User{
         }
     }
 
+
     private static void rollOutMenu(PrintWriter writer, BufferedReader reader) throws IOException {
         List<MenuItem> recommendations = RecommendationEngine.getRecommendations();
         writer.println("Top 5 Menu Items:");
@@ -120,43 +127,36 @@ public class Chef extends User{
             writer.println("Item ID: " + item.getItemId() + ", Name: " + item.getItemName() +
                     ", Rating: " + item.getRating() + ", Review: " + item.getReview());
         }
-        writer.println("Enter the item IDs and names of menu items you want to roll out:");
-        String input = reader.readLine();
-        List<String> entries = Arrays.asList(input.split(";"));
-        writer.println("Enter the date for rolling out the menu (YYYY-MM-DD):");
-        String date = reader.readLine();
-        if (storeRolledOutItems(entries,date)) {
-            writer.println("Items successfully rolled out.");
+
+        writer.println("How many items do you want to roll out?");
+        int itemCount;
+        try {
+            itemCount = Integer.parseInt(reader.readLine().trim());
+        } catch (NumberFormatException e) {
+            writer.println("Invalid number. Please enter a valid number of items.");
+            return;
+        }
+
+        List<String> entries = new ArrayList<>();
+        for (int i = 0; i < itemCount; i++) {
+            writer.println("Enter item ID:");
+            String itemId = reader.readLine().trim();
+            writer.println("Enter item name:");
+            String itemName = reader.readLine().trim();
+            entries.add(itemId + "," + itemName);
+        }
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_YEAR, 1);
+        java.sql.Date tomorrowDate = new java.sql.Date(calendar.getTimeInMillis());
+
+        if (storeRolledOutItems(entries, tomorrowDate.toString())) {
+            writer.println("Items successfully rolled out for " + tomorrowDate.toString() + ".");
         } else {
             writer.println("Failed to roll out items.");
         }
     }
 
-    private static void displayVotedItems(PrintWriter writer) {
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement stmt = connection.prepareStatement(
-                     "SELECT TOP 5 item_id, item_name, number_of_votes FROM votes " +
-                             "WHERE date = (SELECT MAX(date) FROM votes) " +
-                             "ORDER BY number_of_votes DESC");  // Using TOP 5 instead of LIMIT
-             ResultSet resultSet = stmt.executeQuery()) {
-
-            boolean found = false;
-            while (resultSet.next()) {
-                int itemId = resultSet.getInt("item_id");
-                String itemName = resultSet.getString("item_name");
-                int votes = resultSet.getInt("number_of_votes");
-                writer.println("Item ID: " + itemId + ", Name: " + itemName + ", Votes: " + votes);
-                found = true;
-            }
-
-            if (!found) {
-                writer.println("No voted items found.");
-            }
-        } catch (SQLException e) {
-            writer.println("Error retrieving voted items: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
 
 
     private static boolean storeRolledOutItems(List<String> entries, String date) {
@@ -181,6 +181,33 @@ public class Chef extends User{
         } catch (SQLException | NumberFormatException e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+
+    private static void displayVotedItems(PrintWriter writer) {
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(
+                     "SELECT TOP 5 item_id, item_name, number_of_votes FROM votes " +
+                             "WHERE date = (SELECT MAX(date) FROM votes) " +
+                             "ORDER BY number_of_votes DESC"); 
+             ResultSet resultSet = stmt.executeQuery()) {
+
+            boolean found = false;
+            while (resultSet.next()) {
+                int itemId = resultSet.getInt("item_id");
+                String itemName = resultSet.getString("item_name");
+                int votes = resultSet.getInt("number_of_votes");
+                writer.println("Item ID: " + itemId + ", Name: " + itemName + ", Votes: " + votes);
+                found = true;
+            }
+
+            if (!found) {
+                writer.println("No voted items found.");
+            }
+        } catch (SQLException e) {
+            writer.println("Error retrieving voted items: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -316,5 +343,4 @@ public class Chef extends User{
             writer.println("Error retrieving detailed feedback: " + e.getMessage());
         }
     }
-
 }

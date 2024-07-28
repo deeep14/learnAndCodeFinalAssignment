@@ -14,11 +14,12 @@ import java.util.List;
 
 public class Admin extends User {
     private static final String YES_RESPONSE = "yes";
+
     public Admin(String username, int roleId) {
         super(username, roleId);
     }
 
-    public static void displayMenu(PrintWriter writer, BufferedReader reader) throws IOException {
+    public static boolean displayMenu(PrintWriter writer, BufferedReader reader) throws IOException {
         boolean continueSession = true;
         while (continueSession) {
             writer.println("Admin Menu:");
@@ -27,6 +28,8 @@ public class Admin extends User {
             writer.println("3. Update menu item");
             writer.println("4. Display menu items");
             writer.println("5. View discarded items");
+            writer.println("6. Add new user");
+            writer.println("7. Logout");
             writer.println("Please select an option:");
 
             String option = reader.readLine();
@@ -53,19 +56,27 @@ public class Admin extends User {
                 case "5":
                     viewDiscardedItems(writer);
                     break;
+                case "6":
+                    addNewUser(writer, reader);
+                    break;
+                case "7":
+                    writer.println("Thank you for using our cafeteria app!");
+                    continueSession = false;
+                    break;
                 default:
                     writer.println("Invalid option. Please try again.");
                     continue;
             }
-            continueSession = askToContinue(writer, reader);
+
+            if (continueSession) {
+                continueSession = askToContinue(writer, reader);
+            }
         }
-        writer.println("Thank you for using our cafeteria app!");
+        return continueSession;
     }
 
     private static boolean askToContinue(PrintWriter writer, BufferedReader reader) throws IOException {
-        writer.println("Do you want to perform another function? (yes/no)");
-        String response = reader.readLine();
-        return YES_RESPONSE.equalsIgnoreCase(response);
+        return true;
     }
 
     private static void addMenuItem(PrintWriter writer, BufferedReader reader) throws IOException {
@@ -75,7 +86,12 @@ public class Admin extends User {
         String available = reader.readLine();
         writer.println("What is the price of the item?");
         Integer price = Integer.valueOf(reader.readLine());
-        if (MenuItemOperations.addMenuItem(itemName, available, price)) {
+        writer.println("Enter default rating:");
+        int rating = Integer.parseInt(reader.readLine());
+        writer.println("Enter default review:");
+        String review = reader.readLine();
+
+        if (MenuItemOperations.addMenuItem(itemName, available,price,  rating, review)) {
             writer.println("Menu item added successfully.");
         } else {
             writer.println("Failed to add menu item.");
@@ -95,11 +111,9 @@ public class Admin extends User {
     private static void updateMenuItem(PrintWriter writer, BufferedReader reader) throws IOException {
         writer.println("Enter item ID to update:");
         int itemIdToUpdate = Integer.parseInt(reader.readLine());
-        writer.println("Enter new item name:");
-        String newItemName = reader.readLine();
-        writer.println("Is it available (Yes/No):");
-        String newAvailable = reader.readLine();
-        if (MenuItemOperations.updateMenuItem(itemIdToUpdate, newItemName, newAvailable)) {
+        writer.println("Enter new price:");
+        int newPrice = Integer.parseInt(reader.readLine());
+        if (MenuItemOperations.updateMenuItem(itemIdToUpdate, newPrice)) {
             writer.println("Menu item updated successfully.");
         } else {
             writer.println("Failed to update menu item.");
@@ -141,6 +155,37 @@ public class Admin extends User {
             }
         } catch (SQLException e) {
             writer.println("Error retrieving discarded items: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private static void addNewUser(PrintWriter writer, BufferedReader reader) throws IOException {
+        writer.println("Enter user ID:");
+        int userId = Integer.parseInt(reader.readLine());
+        writer.println("Enter username:");
+        String username = reader.readLine();
+        writer.println("Enter role ID (1 for admin, 2 for chef, and 3 for employee):");
+        int roleId = Integer.parseInt(reader.readLine());
+        writer.println("Enter password:");
+        String password = reader.readLine();
+
+        String query = "INSERT INTO [User] (user_id, name, role_id, password) VALUES (?, ?, ?, ?)";
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setInt(1, userId);
+            stmt.setString(2, username);
+            stmt.setInt(3, roleId);
+            stmt.setString(4, password);
+
+            int rowsAffected = stmt.executeUpdate();
+            if (rowsAffected > 0) {
+                writer.println("User added successfully.");
+            } else {
+                writer.println("Failed to add user.");
+            }
+        } catch (SQLException e) {
+            writer.println("Error adding user: " + e.getMessage());
             e.printStackTrace();
         }
     }

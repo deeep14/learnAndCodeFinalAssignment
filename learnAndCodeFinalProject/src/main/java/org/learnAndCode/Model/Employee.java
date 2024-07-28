@@ -1,6 +1,7 @@
 package org.learnAndCode.Model;
 
 import org.learnAndCode.Service.DBConnection;
+import org.learnAndCode.Service.MenuItemOperations;
 import org.learnAndCode.Service.NotificationQueue;
 
 import java.io.BufferedReader;
@@ -10,22 +11,26 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Calendar;
+import java.util.List;
 
 public class Employee extends User {
-    private static final String YES_RESPONSE = "yes";
     public Employee(String username, int roleId) {
         super(username, roleId);
     }
 
-    public static void displayMenu(PrintWriter writer, BufferedReader reader) throws IOException {
+    public static boolean displayMenu(PrintWriter writer, BufferedReader reader) throws IOException {
         boolean continueSession = true;
         while (continueSession) {
             writer.println("Employee Menu:");
+            writer.println("0. Display all menu items");
             writer.println("1. View rolled out items");
             writer.println("2. Vote");
             writer.println("3. Give feedback");
             writer.println("4. Check Notifications");
-            writer.println("5. Give detailed feedback");
+            writer.println("5. Give detailed feedback on discarded food items:");
+            writer.println("6. Update Profile");
+            writer.println("7. Logout");
             writer.println("Please select an option:");
 
             String option = reader.readLine();
@@ -37,6 +42,10 @@ public class Employee extends User {
             }
 
             switch (option) {
+                case "0":
+                    writer.println("Displaying all menu items");
+                    displayMenuItems(writer);
+                    break;
                 case "1":
                     writer.println("Displaying rolled out items...");
                     displayRolledOutItems(writer);
@@ -61,19 +70,36 @@ public class Employee extends User {
                     writer.println("Updating profile...");
                     updateProfile(writer, reader);
                     break;
+                case "7":
+                    writer.println("Thank you for using our cafeteria app!");
+                    continueSession = false;
+                    break;
                 default:
                     writer.println("Invalid option. Please try again.");
                     continue;
             }
-            continueSession = askToContinue(writer, reader);
+
+            if (continueSession) {
+                continueSession = askToContinue(writer, reader);
+            }
         }
-        writer.println("Thank you for using our cafeteria app!");
+        return continueSession;
     }
 
     private static boolean askToContinue(PrintWriter writer, BufferedReader reader) throws IOException {
-        writer.println("Do you want to perform another function? (yes/no)");
-        String response = reader.readLine();
-        return YES_RESPONSE.equalsIgnoreCase(response);
+        return true;
+    }
+
+    private static void displayMenuItems(PrintWriter writer) {
+        List<MenuItem> menuItems = MenuItemOperations.getAllMenuItems();
+        if (menuItems.isEmpty()) {
+            writer.println("No menu items found.");
+        } else {
+            for (MenuItem item : menuItems) {
+                writer.println("Item ID: " + item.getItemId() + ", Name: " + item.getItemName() +
+                        ", Rating: " + item.getRating() + ", Review: " + item.getReview());
+            }
+        }
     }
 
     private static void voteForMenuItem(PrintWriter writer, BufferedReader reader) throws IOException {
@@ -84,10 +110,12 @@ public class Employee extends User {
         int itemId = Integer.parseInt(reader.readLine());
         writer.println("Enter the item name:");
         String itemName = reader.readLine();
-        writer.println("Enter the date for your vote (YYYY-MM-DD):");
-        String voteDate = reader.readLine();
 
-        if (updateVotes(itemId, itemName, voteDate)) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_YEAR, 1);
+        java.sql.Date tomorrowDate = new java.sql.Date(calendar.getTimeInMillis());
+
+        if (updateVotes(itemId, itemName, tomorrowDate.toString())) {
             writer.println("Vote successfully submitted!");
         } else {
             writer.println("Failed to submit vote.");
@@ -122,6 +150,7 @@ public class Employee extends User {
             return false;
         }
     }
+
 
     private static void displayRolledOutItems(PrintWriter writer) {
         String query = "SELECT item_id, item_name, date FROM rolled_out_items " +
@@ -265,6 +294,7 @@ public class Employee extends User {
             return false;
         }
     }
+
     private static void updateProfile(PrintWriter writer, BufferedReader reader) throws IOException {
 
         writer.println("Enter your username:");
@@ -275,7 +305,7 @@ public class Employee extends User {
         String spiceLevel = reader.readLine();
         writer.println("Enter your region preference (north indian, south indian):");
         String regionPreference = reader.readLine();
-        writer.println("Do you have a sweet tooth? (yes/no):");
+        writer.println("Do you have a sweet tooth? (1/0):");
         boolean sweetTooth = "yes".equalsIgnoreCase(reader.readLine());
 
         if (storeProfile(username, foodType, spiceLevel, regionPreference, sweetTooth)) {
@@ -312,6 +342,4 @@ public class Employee extends User {
             return false;
         }
     }
-
-
 }
