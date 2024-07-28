@@ -29,4 +29,14 @@ Enter your username:
 Enter your food type (veg, non veg, egg):
 Enter your spice level (high, medium, low):
 Enter your region preference (north indian, south indian):
-Do you have a sweet tooth? (yes/no):
+Do you have a sweet tooth? (1/0):
+Enter new price:
+Enter default rating:
+Enter default review:
+Enter the item IDs and names of menu items you want to roll out (format: itemId,itemName;itemId,itemName;...):
+How many items do you want to roll out?
+Enter item ID:
+Enter user ID:
+Enter username:
+Enter role ID (1 for admin, 2 for chef, and 3 for employee):
+Enter password:
